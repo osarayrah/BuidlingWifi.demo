@@ -1,0 +1,1736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Building-Wifi – Turnkey MDU Wi-Fi Platform Demo</title>
+
+  <style>
+    :root{
+      /* DataValet brand-inspired colors */
+      --primary:#0066cc;
+      --primary-light:#3399ff;
+      --accent:#00cc66;
+      --accent-warm:#ff9933;
+
+      --bg0:#0a1520;
+      --bg1:#0d1d2e;
+      --card: rgba(13, 29, 46, .85);
+
+      --text:#e8f4ff;
+      --muted: rgba(232,244,255,.70);
+
+      --radius: 20px;
+      --shadow: 0 20px 70px rgba(0,0,0,.5);
+      --stroke: rgba(255,255,255,.12);
+
+      --danger:#ff4d4d;
+      --ok:#00cc66;
+      --warn:#ff9933;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      display:grid;
+      place-items:center;
+      padding:24px;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      color:var(--text);
+      background:
+        radial-gradient(1000px 800px at 20% 10%, rgba(0,102,204,.15), transparent 65%),
+        radial-gradient(900px 700px at 80% 30%, rgba(0,204,102,.12), transparent 60%),
+        radial-gradient(800px 600px at 50% 95%, rgba(255,153,51,.08), transparent 65%),
+        linear-gradient(165deg, var(--bg0), var(--bg1));
+    }
+
+    /* Phone */
+    .phone{
+      width: 390px;
+      height: 844px;
+      border-radius: 44px;
+      padding: 14px;
+      background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.05));
+      border: 1px solid rgba(255,255,255,.16);
+      box-shadow: var(--shadow);
+      position:relative;
+      overflow:hidden;
+    }
+    @media (max-width: 430px){
+      .phone{ width:min(390px,92vw); height:min(844px,88vh); }
+    }
+
+    .screen{
+      height:100%;
+      border-radius: 34px;
+      background: linear-gradient(180deg, rgba(10,21,32,.90), rgba(10,21,32,.78));
+      border: 1px solid rgba(255,255,255,.12);
+      overflow:hidden;
+      position:relative;
+    }
+
+    .notch{
+      position:absolute;
+      top:10px; left:50%;
+      transform:translateX(-50%);
+      width:150px; height:26px;
+      border-radius: 0 0 18px 18px;
+      background: rgba(0,0,0,.40);
+      border: 1px solid rgba(255,255,255,.08);
+      z-index:20;
+      backdrop-filter: blur(10px);
+    }
+
+    /* Top */
+    .topbar{
+      position:relative;
+      z-index:10;
+      padding: 18px 18px 12px;
+      padding-top: 44px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .brand{display:flex;align-items:center;gap:10px;min-width:0;}
+    .logo{
+      width:40px;height:40px;border-radius:12px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      border: 1px solid rgba(255,255,255,.18);
+      display:grid;place-items:center;
+      flex:0 0 auto;
+      box-shadow: 0 12px 36px rgba(0,102,204,.18);
+    }
+    .logo svg{width:22px;height:22px;opacity:.98}
+    .bt{display:flex;flex-direction:column;line-height:1.1;min-width:0;}
+    .bt strong{font-size:15px;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .bt span{margin-top:4px;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+    .pill{
+      font-size:12px;
+      padding:8px 11px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.08);
+      color: rgba(232,244,255,.92);
+      backdrop-filter: blur(10px);
+      white-space:nowrap;
+    }
+
+    /* Progress */
+    .progressWrap{
+      position:relative; z-index:10;
+      padding: 0 18px 14px;
+      display:flex; flex-direction:column; gap:10px;
+    }
+    .progressTop{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      color: rgba(232,244,255,.88); font-size:12px;
+    }
+    .progress{
+      height:10px; border-radius:999px;
+      background: rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);
+      overflow:hidden;
+    }
+    .bar{
+      height:100%; width:0%;
+      border-radius:999px;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      transition: width .35s ease;
+    }
+
+    /* Content */
+    .content{
+      position:relative; z-index:10;
+      padding: 0 18px 18px;
+      height: calc(100% - 140px);
+      display:flex; flex-direction:column;
+      overflow-y: auto;
+    }
+    .content::-webkit-scrollbar{width:0}
+    .card{
+      flex:1;
+      background: var(--card);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius: var(--radius);
+      padding: 16px;
+      backdrop-filter: blur(14px);
+      box-shadow: 0 16px 56px rgba(0,0,0,.28);
+      overflow:hidden;
+      position:relative;
+    }
+    .view{
+      height:100%;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      animation: pop .18s ease-out;
+      overflow-y: auto;
+    }
+    .view::-webkit-scrollbar{width:0}
+    @keyframes pop{ from{transform: translateY(8px); opacity:.6} to{transform: translateY(0); opacity:1} }
+
+    h2{margin: 2px 0 0; font-size: 20px; letter-spacing:.3px; font-weight:700;}
+    p{margin:0; color: var(--muted); font-size: 13px; line-height: 1.5;}
+
+    .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;}
+    .chip{
+      font-size:12px;
+      padding:7px 11px;
+      border-radius:999px;
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.12);
+      color: rgba(232,244,255,.92);
+    }
+    .chip.good{border-color: rgba(0,204,102,.30); background: rgba(0,204,102,.12);}
+    .chip.warn{border-color: rgba(255,153,51,.32); background: rgba(255,153,51,.12);}
+    .chip.blue{border-color: rgba(0,102,204,.32); background: rgba(0,102,204,.12);}
+
+    .field{display:flex;flex-direction:column;gap:8px;margin-top:10px;}
+    label{font-size:12px;color: rgba(232,244,255,.88); font-weight:600;}
+    input, textarea, select{
+      width:100%;
+      padding:12px 13px;
+      border-radius:14px;
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.22);
+      color: var(--text);
+      outline:none;
+      resize:none;
+      font-size:14px;
+    }
+    input::placeholder, textarea::placeholder{color: rgba(232,244,255,.48)}
+    input:focus, textarea:focus, select:focus{border-color: rgba(0,102,204,.50); box-shadow: 0 0 0 4px rgba(0,102,204,.16);}
+
+    .error{
+      display:none;
+      padding:10px 13px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,77,77,.38);
+      background: rgba(255,77,77,.12);
+      color: rgba(255,230,230,.96);
+      font-size: 12px;
+      line-height:1.4;
+    }
+    .error.show{display:block}
+
+    .btnRow{display:flex;gap:10px;margin-top:auto;padding-top:8px;}
+    button{
+      border:0; cursor:pointer; user-select:none;
+      border-radius:16px;
+      padding:13px 14px;
+      font-weight:700;
+      letter-spacing:.3px;
+      font-size:13px;
+      transition: transform .06s ease, opacity .2s ease;
+    }
+    button:active{transform: translateY(1px)}
+    button:disabled{opacity:.58;cursor:not-allowed}
+    .primary{
+      flex:1;
+      color:#fff;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      box-shadow: 0 16px 42px rgba(0,102,204,.14);
+      display:flex;align-items:center;justify-content:center;gap:10px;
+    }
+    .ghost{
+      width:110px;
+      color: rgba(232,244,255,.94);
+      background: rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.14);
+    }
+
+    .spinner{
+      width:16px;height:16px;border-radius:999px;
+      border:2px solid rgba(255,255,255,.30);
+      border-top-color: rgba(255,255,255,.92);
+      animation: spin .7s linear infinite;
+      display:none;
+    }
+    .loading .spinner{display:inline-block}
+    @keyframes spin{to{transform: rotate(360deg)}}
+
+    .plan{
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.08);
+      padding: 13px;
+      cursor:pointer;
+      transition: transform .08s ease, border .2s ease, background .2s ease;
+      position:relative;
+    }
+    .plan.selected{
+      border-color: rgba(0,102,204,.45);
+      background: rgba(0,102,204,.12);
+      box-shadow: 0 0 0 4px rgba(0,102,204,.12);
+    }
+    .plan:active{transform: translateY(1px)}
+    .plan:hover{border-color: rgba(0,102,204,.32)}
+    .planTop{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+    .planTop strong{font-size:14px}
+    .tag{
+      font-size:11px;
+      padding:6px 11px;
+      border-radius:999px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.18);
+      white-space:nowrap;
+      font-weight:700;
+    }
+    .tag.basic{border-color: rgba(0,204,102,.26); background: rgba(0,204,102,.12); color: rgba(0,255,128,.95)}
+    .tag.premium{border-color: rgba(255,153,51,.34); background: rgba(255,153,51,.14); color: rgba(255,204,102,.95)}
+    .planMeta{margin-top:7px;font-size:12px;color: var(--muted);line-height:1.45;}
+    .planFeatures{margin-top:8px;display:flex;flex-direction:column;gap:5px;}
+    .planFeatures li{font-size:11px;color: rgba(232,244,255,.75);list-style:none;padding-left:16px;position:relative;}
+    .planFeatures li::before{content:"✓";position:absolute;left:0;color:var(--accent);font-weight:800;}
+
+    .hintBox{
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.08);
+      padding: 11px 13px;
+      font-size:12px;
+      color: rgba(232,244,255,.90);
+      line-height:1.5;
+    }
+    .hintBox b{color: rgba(0,204,255,.96); font-weight:700;}
+
+    .rowBetween{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+    .linkBtn{
+      border:0;
+      background:transparent;
+      color: rgba(232,244,255,.90);
+      font-weight:700;
+      font-size:12px;
+      padding:0;
+      text-decoration: underline;
+      cursor:pointer;
+    }
+
+    .grid2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+      margin-top:8px;
+    }
+    .kpi{
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.08);
+      padding: 12px;
+    }
+    .kpi strong{display:block;font-size:15px;font-weight:700;}
+    .kpi span{display:block;font-size:11px;color: var(--muted);margin-top:5px;}
+
+    .list{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      margin-top:8px;
+    }
+    .item{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+      padding: 12px 13px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.08);
+      transition: background .2s ease;
+    }
+    .item.clickable{cursor:pointer;}
+    .item.clickable:hover{background: rgba(255,255,255,.12)}
+    .txt{min-width:0}
+    .txt strong{
+      font-size:13px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      display:block;
+      font-weight:700;
+    }
+    .txt span{
+      font-size:12px;
+      color: var(--muted);
+      display:block;
+      margin-top:3px;
+    }
+    .status{
+      font-size:11px;
+      padding: 6px 11px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.16);
+      color: rgba(232,244,255,.94);
+      white-space:nowrap;
+      font-weight:700;
+    }
+    .status.ok{border-color: rgba(0,204,102,.32); background: rgba(0,204,102,.12); color: rgba(0,255,128,.95)}
+    .status.warn{border-color: rgba(255,153,51,.32); background: rgba(255,153,51,.12); color: rgba(255,204,102,.95)}
+    .status.danger{border-color: rgba(255,77,77,.38); background: rgba(255,77,77,.12); color: rgba(255,200,200,.95)}
+
+    .seg{
+      display:flex;
+      gap:8px;
+      padding: 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.08);
+    }
+    .seg button{
+      flex:1;
+      border-radius:999px;
+      padding: 9px 11px;
+      font-size:12px;
+      font-weight:800;
+      background: transparent;
+      border: 1px solid transparent;
+      color: rgba(232,244,255,.92);
+    }
+    .seg button.active{
+      background: rgba(0,0,0,.24);
+      border-color: rgba(255,255,255,.16);
+      box-shadow: 0 6px 20px rgba(0,0,0,.24);
+    }
+
+    .deviceItem{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding: 11px 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.08);
+    }
+    .deviceIcon{
+      width:36px;
+      height:36px;
+      border-radius:10px;
+      background: linear-gradient(135deg, rgba(0,102,204,.18), rgba(0,204,102,.18));
+      border: 1px solid rgba(255,255,255,.12);
+      display:grid;
+      place-items:center;
+      font-size:18px;
+    }
+    .deviceInfo{flex:1;min-width:0;}
+    .deviceInfo strong{font-size:13px;display:block;font-weight:700;}
+    .deviceInfo span{font-size:11px;color:var(--muted);display:block;margin-top:2px;}
+
+    .toast{
+      position:absolute;
+      left:50%;
+      transform:translateX(-50%);
+      bottom: 18px;
+      z-index:30;
+      background: rgba(0,0,0,.40);
+      border: 1px solid rgba(255,255,255,.16);
+      padding: 10px 13px;
+      border-radius: 999px;
+      color: rgba(232,244,255,.94);
+      font-size:12px;
+      backdrop-filter: blur(12px);
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .25s ease, transform .25s ease;
+    }
+    .toast.show{opacity:1; transform: translateX(-50%) translateY(-2px);}
+
+    .badge{
+      display:inline-block;
+      padding:4px 8px;
+      border-radius:8px;
+      font-size:10px;
+      font-weight:800;
+      text-transform:uppercase;
+      letter-spacing:.5px;
+    }
+    .badge.new{background: rgba(0,204,102,.18); color: rgba(0,255,128,.95); border: 1px solid rgba(0,204,102,.30)}
+  </style>
+</head>
+
+<body>
+  <div class="phone">
+    <div class="screen">
+      <div class="notch"></div>
+
+      <div class="topbar">
+        <div class="brand">
+          <div class="logo" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="8" stroke="white" stroke-width="2" fill="none"/>
+              <path d="M8 12h8M12 8v8" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="bt">
+            <strong>Buidling Wifi</strong>
+            <span id="subTitle">Turnkey MDU Wi-Fi</span>
+          </div>
+        </div>
+        <div class="pill" id="modePill">Resident</div>
+      </div>
+
+      <div class="progressWrap" id="progressWrap">
+        <div class="progressTop">
+          <span id="stepText">Step 1 of 8</span>
+          <span id="hintText">Get started</span>
+        </div>
+        <div class="progress"><div class="bar" id="bar"></div></div>
+      </div>
+
+      <div class="content">
+        <div class="card">
+
+          <!-- V1: Landing -->
+          <div id="v1" class="view">
+            <div class="seg" aria-label="Persona switch">
+              <button id="segResident" class="active" onclick="setMode('resident')">Resident</button>
+              <button id="segManager" onclick="setMode('manager')">Manager</button>
+            </div>
+
+            <h2>MDU Internet for Apartments, Senior Living & Hospitality</h2>
+            <p id="welcomeCopy">Turn your building's internet into a revenue-generating asset. This is a managed Wi-Fi solution designed for multi-tenant properties. Increase property value, generate new revenue, and enhance tenant experience.</p>
+
+            <div class="chips" id="welcomeChips">
+              <span class="chip good">Increase NOI</span>
+              <span class="chip blue">One Single Network</span>
+              <span class="chip warn">PMS Integration</span>
+              <span class="chip good">Vendor Agnostic</span>
+            </div>
+
+            <div class="hintBox">
+              <b>Demo Building:</b> Riverside Towers<br/>
+              <b>PMS Integration:</b> Yardi Voyager<br/>
+              <b>Network:</b> Single seamless SSID across entire property
+            </div>
+
+            <div class="hintBox" style="margin-top:10px;">
+              <b>Demo Credentials - Try these:</b><br/>
+              <b>Residents:</b><br/>
+              • Unit 304 → alex@demo.com<br/>
+              • Unit 1208 → sara@demo.com<br/>
+              <br/>
+              <b>Property Manager:</b><br/>
+              • Username: manager@riverside.com<br/>
+              • Password: demo2024
+            </div>
+
+            <div class="btnRow">
+              <button class="primary" onclick="startPrimary()">Get Started</button>
+            </div>
+          </div>
+
+          <!-- Manager Login -->
+          <div id="vManagerLogin" class="view" style="display:none">
+            <h2>Property Manager Login</h2>
+            <p>Secure access to the management portal. Property managers control tiered plans, approvals, and building-wide network settings.</p>
+
+            <div class="field">
+              <label for="managerUsername">Manager Email</label>
+              <input id="managerUsername" placeholder="manager@riverside.com" inputmode="email" />
+            </div>
+
+            <div class="field">
+              <label for="managerPassword">Password</label>
+              <input id="managerPassword" type="password" placeholder="Enter password" />
+            </div>
+
+            <div class="hintBox">
+              <b>Demo Credentials:</b><br/>
+              Username: manager@riverside.com<br/>
+              Password: demo2024
+            </div>
+
+            <div id="errManager" class="error"></div>
+
+            <div class="btnRow">
+              <button class="ghost" onclick="setMode('resident'); showResident(1)">Back</button>
+              <button class="primary" onclick="loginManager()">
+                <span class="spinner"></span><span>Login</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- RESIDENT FLOW -->
+          <div id="v2" class="view" style="display:none">
+            <h2>Verify Your Unit</h2>
+            <p>Enter your unit number. We'll sync with the property management system to verify your residency.</p>
+
+            <div class="field">
+              <label for="unit">Unit Number</label>
+              <input id="unit" placeholder="e.g., 304 or 1208" inputmode="numeric" />
+            </div>
+
+            <div class="hintBox">
+              <b>PMS Sync:</b> Your move-in data is synced from Yardi. Internet activates instantly on your move-in date.
+            </div>
+
+            <div id="err2" class="error"></div>
+
+            <div class="btnRow">
+              <button class="ghost" onclick="goR(2,1)">Back</button>
+              <button class="primary" onclick="validateUnit()">Continue</button>
+            </div>
+          </div>
+
+          <div id="v3" class="view" style="display:none">
+            <h2>Email Verification</h2>
+            <p>Enter the email registered in our property management system for secure account access.</p>
+
+            <div class="field">
+              <label for="email">Registered Email</label>
+              <input id="email" placeholder="e.g., alex@demo.com" inputmode="email" />
+            </div>
+
+            <div id="unitLine" class="hintBox">Unit: —</div>
+            <div id="err3" class="error"></div>
+
+            <div class="btnRow">
+              <button class="ghost" onclick="goR(3,2)">Back</button>
+              <button class="primary" onclick="sendOtp()">Send Verification Code</button>
+            </div>
+          </div>
+
+          <div id="v4" class="view" style="display:none">
+            <h2>Verify Code</h2>
+            <p>Enter the 6-digit code sent to <b id="maskedEmail"></b>.</p>
+
+            <div class="hintBox">Demo OTP: <b id="otpHint">—</b> (expires in 10 minutes)</div>
+
+            <div class="field">
+              <label for="otp">Verification Code</label>
+              <input id="otp" placeholder="6 digits" inputmode="numeric" maxlength="6" />
+            </div>
+
+            <div class="rowBetween">
+              <span class="pill" id="countdownPill">Resend in 30s</span>
+              <button class="linkBtn" id="resendBtn" onclick="resendOtp()" disabled>Resend Code</button>
+            </div>
+
+            <div id="err4" class="error"></div>
+
+            <div class="btnRow">
+              <button class="ghost" onclick="goR(4,3)">Back</button>
+              <button class="primary" id="verifyBtn" onclick="verifyOtp()">
+                <span class="spinner"></span><span>Verify Account</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="v5" class="view" style="display:none">
+            <h2>Choose Your Plan</h2>
+            <p>Select the internet speed that fits your lifestyle. Upgrade or downgrade anytime through the Maestro platform.</p>
+
+            <div id="planBasic" class="plan selected" onclick="choosePlan('Basic')">
+              <div class="planTop">
+                <strong>Basic Plan</strong>
+                <span class="tag basic">Included in Rent</span>
+              </div>
+              <div class="planMeta">Fast, secure, "home-like" Wi-Fi everywhere in the building</div>
+              <ul class="planFeatures">
+                <li>One single SSID across entire property</li>
+                <li>Seamless roaming (units + common areas)</li>
+                <li>Secure personal network per unit</li>
+                <li>No set-top boxes needed</li>
+                <li>Self-service portal access</li>
+              </ul>
+            </div>
+
+            <div id="planPremium" class="plan" style="margin-top:10px" onclick="choosePlan('Premium')">
+              <div class="planTop">
+                <strong>Premium Plan</strong>
+                <span class="tag premium">+$25/month</span>
+              </div>
+              <div class="planMeta">Higher speeds for gaming, 4K streaming, and work-from-home</div>
+              <ul class="planFeatures">
+                <li>Premium bandwidth tier</li>
+                <li>Priority network performance</li>
+                <li>Enhanced device capacity</li>
+                <li>Conference network support</li>
+                <li>Advanced management features</li>
+              </ul>
+            </div>
+
+            <div class="hintBox">
+              <b>Building Policy:</b> Premium plans require property manager approval for billing allocation.<br/>
+              <b>Approval Time:</b> Typically within 24 hours<br/>
+              <b>Billing:</b> Added to next month's rent invoice via PMS integration
+            </div>
+
+            <div class="btnRow">
+              <button class="ghost" onclick="goR(5,4)">Back</button>
+              <button class="primary" onclick="continueFromPlan()">Continue</button>
+            </div>
+          </div>
+
+          <!-- Premium Pending -->
+          <div id="v6" class="view" style="display:none">
+            <h2>Premium Request Pending</h2>
+            <p>Your Premium plan request requires property manager approval per building policy.</p>
+
+            <div class="hintBox">
+              <b>Status:</b> <span style="color:var(--warn)">Awaiting Approval</span><br/>
+              <b>Notified:</b> Building Management Portal<br/>
+              <b>Typical Response:</b> Within 24 hours<br/>
+              You'll receive an email notification once approved. Your network will be automatically upgraded.
+            </div>
+
+            <div class="chips">
+              <span class="chip warn">Pending Approval</span>
+              <span class="chip blue">No Billing Until Active</span>
+              <span class="chip good">Instant Upon Approval</span>
+            </div>
+
+            <div class="btnRow">
+              <button class="ghost" onclick="goR(6,5)">Change Plan</button>
+              <button class="primary" onclick="choosePlan('Basic'); toast('Switched to Basic Plan'); goR(6,7);">Continue with Basic</button>
+            </div>
+          </div>
+
+          <!-- Network Provisioning -->
+          <div id="v7" class="view" style="display:none">
+            <h2>Provisioning Your Network</h2>
+            <p>Creating your secure personal network on the property-wide single SSID. One network that works everywhere - no set-top boxes needed.</p>
+
+            <div class="kpi" style="margin-top:10px;">
+              <strong id="ssidLabel">Maestro-RiversideTowers</strong>
+              <span>Single Property-Wide SSID</span>
+            </div>
+
+            <div class="hintBox" style="margin-top:12px;">
+              <b>Unit:</b> <span id="unitOut2">—</span><br/>
+              <b>Plan:</b> <span id="planTiny">—</span><br/>
+              <b>Network Type:</b> One single SSID across entire property<br/>
+              <b>Security:</b> Secure personal network per unit<br/>
+              <b>Coverage:</b> Seamless roaming everywhere (unit, lobby, gym, pool, all common areas)<br/>
+              <b>Technology:</b> Vendor agnostic - works with top network vendors
+            </div>
+
+            <div class="btnRow">
+              <button class="ghost" onclick="goR(7,5)">Back</button>
+              <button class="primary" id="createBtn" onclick="createNetwork()">
+                <span class="spinner"></span><span>Activate Network</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Resident Dashboard -->
+          <div id="v8" class="view" style="display:none">
+            <h2>Your Connected Home</h2>
+            <p>Fast, secure, "home-like" Wi-Fi that works everywhere in the building. Manage your connection, upgrade your plan, and access support.</p>
+
+            <div class="grid2">
+              <div class="kpi">
+                <strong id="unitFinal">—</strong>
+                <span>Unit Number</span>
+              </div>
+              <div class="kpi">
+                <strong id="planOut">—</strong>
+                <span>Active Plan</span>
+              </div>
+            </div>
+
+            <div class="hintBox">
+              <b>Network Status:</b> <span style="color:var(--ok)">Connected</span> • <b>Coverage:</b> Entire building • <b>Devices:</b> 3 online
+            </div>
+
+            <div class="list">
+              <div class="item clickable" onclick="goR(8,12)">
+                <div class="txt">
+                  <strong>Bandwidth Usage <span class="badge new">New</span></strong>
+                  <span>View detailed usage analytics & history</span>
+                </div>
+                <span class="status ok">124 GB</span>
+              </div>
+
+              <div class="item clickable" onclick="goR(8,10)">
+                <div class="txt">
+                  <strong>My Devices</strong>
+                  <span>Manage devices • IoT & Smart Building ready</span>
+                </div>
+                <span class="status ok">3 Online</span>
+              </div>
+
+              <div class="item clickable" onclick="goR(8,11)">
+                <div class="txt">
+                  <strong>Self-Service Portal</strong>
+                  <span>Reset credentials • View usage • Manage access</span>
+                </div>
+                <span class="status">Manage</span>
+              </div>
+
+              <div class="item clickable" onclick="goR(8,13)">
+                <div class="txt">
+                  <strong>Upgrade Plan</strong>
+                  <span>Switch to Premium for higher speeds</span>
+                </div>
+                <span class="status warn">Available</span>
+              </div>
+
+              <div class="item clickable" onclick="goR(8,9)">
+                <div class="txt">
+                  <strong>Support Center</strong>
+                  <span>Fully managed support • No on-site IT needed</span>
+                </div>
+                <span class="status">Get Help</span>
+              </div>
+            </div>
+
+            <div class="btnRow">
+              <button class="ghost" onclick="resetAll()">Restart Demo</button>
+              <button class="primary" onclick="toast('Welcome to your Internet-ready unit! ✅')">Done</button>
+            </div>
+          </div>
+
+          <!-- Support Ticket -->
+          <div id="v9" class="view" style="display:none">
+            <h2>Fully Managed Support</h2>
+            <p>Our team handles everything - no on-site IT or complex setups needed. Property managers stay focused on property management.</p>
+
+            <div class="field">
+              <label for="issue">Issue Summary</label>
+              <input id="issue" placeholder="e.g., Connection issue in bedroom" />
+            </div>
+            <div class="field">
+              <label for="details">Details (Optional)</label>
+              <textarea id="details" rows="4" placeholder="Additional context about the issue..."></textarea>
+            </div>
+
+            <div class="hintBox">
+              <b>Support Model:</b> Fully managed by DataValet<br/>
+              <b>Coverage:</b> Network management, troubleshooting, upgrades<br/>
+              <b>Property Manager:</b> No technical expertise required
+            </div>
+
+            <div id="err9" class="error"></div>
+
+            <div class="btnRow">
+              <button class="ghost" onclick="goR(9,8)">Back</button>
+              <button class="primary" onclick="submitTicket()">
+                <span class="spinner"></span><span>Submit Ticket</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Device Management -->
+          <div id="v10" class="view" style="display:none">
+            <h2>IoT & Smart Building Ready</h2>
+            <p>Supports mDNS and multicast for smart TVs, security cameras, printers, and more. Manage all your connected devices from one place.</p>
+
+            <div class="list" id="deviceList">
+              <div class="deviceItem">
+                <div class="deviceIcon">📱</div>
+                <div class="deviceInfo">
+                  <strong>iPhone 14</strong>
+                  <span>Connected • Seamless roaming enabled</span>
+                </div>
+                <span class="status ok">Online</span>
+              </div>
+              <div class="deviceItem">
+                <div class="deviceIcon">💻</div>
+                <div class="deviceInfo">
+                  <strong>MacBook Pro</strong>
+                  <span>Connected • Home-like Wi-Fi experience</span>
+                </div>
+                <span class="status ok">Online</span>
+              </div>
+              <div class="deviceItem">
+                <div class="deviceIcon">📺</div>
+                <div class="deviceInfo">
+                  <strong>Samsung Smart TV</strong>
+                  <span>Connected • mDNS/Multicast supported</span>
+                </div>
+                <span class="status ok">Online</span>
+              </div>
+            </div>
+
+            <div class="hintBox">
+              <b>Smart Device Support:</b> Works with smart TVs, cameras, printers, IoT devices<br/>
+              <b>Network Technology:</b> mDNS and multicast enabled<br/>
+              <b>Device Limit:</b> Scales based on your plan tier
+            </div>
+
+            <div class="btnRow">
+              <button class="ghost" onclick="goR(10,8)">Back</button>
+              <button class="primary" onclick="toast('Devices refreshed ✅')">Refresh</button>
+            </div>
+          </div>
+
+          <!-- Network Settings -->
+          <div id="v11" class="view" style="display:none">
+            <h2>Self-Service Portal</h2>
+            <p>Manage your connection independently. Reset credentials, view usage, and control access - all without needing to contact property management.</p>
+
+            <div class="field">
+              <label for="netPassword">Wi-Fi Password</label>
+              <input id="netPassword" type="password" value="SecurePass2024!" />
+            </div>
+
+            <div class="list">
+              <div class="item clickable" onclick="toast('Guest access enabled for 24 hours')">
+                <div class="txt">
+                  <strong>Guest Access</strong>
+                  <span>Temporary network access for visitors</span>
+                </div>
+                <span class="status">Enable</span>
+              </div>
+
+              <div class="item clickable" onclick="toast('Usage report generated')">
+                <div class="txt">
+                  <strong>View Usage</strong>
+                  <span>Monitor data consumption and devices</span>
+                </div>
+                <span class="status">View</span>
+              </div>
+            </div>
+
+            <div class="hintBox">
+              <b>Self-Service Features:</b> Reset credentials, manage access, view usage<br/>
+              <b>Network Type:</b> Secure personal network on shared SSID<br/>
+              <b>Support:</b> Changes apply instantly across all devices
+            </div>
+
+            <div class="btnRow">
+              <button class="ghost" onclick="goR(11,8)">Back</button>
+              <button class="primary" onclick="toast('Settings saved ✅'); goR(11,8)">Save Changes</button>
+            </div>
+          </div>
+
+          <!-- MANAGER MODE -->
+          <div id="m1" class="view" style="display:none">
+            <h2>Property Management Dashboard</h2>
+            <p>Turn connectivity into a revenue-generating asset. Increase property value, boost NOI, and simplify operations from one centralized portal.</p>
+
+            <div class="grid2">
+              <div class="kpi">
+                <strong id="kpiHealth">99.97%</strong>
+                <span>Network Uptime</span>
+              </div>
+              <div class="kpi">
+                <strong id="kpiActive">142/150</strong>
+                <span>Active Units</span>
+              </div>
+              <div class="kpi">
+                <strong>$3,550</strong>
+                <span>Monthly Revenue (Demo)</span>
+              </div>
+              <div class="kpi">
+                <strong>$51,000</strong>
+                <span>Property Value Increase</span>
+              </div>
+            </div>
+
+            <div class="list">
+              <div class="item">
+                <div class="txt">
+                  <strong>Network Infrastructure</strong>
+                  <span>Vendor agnostic • Fully managed • No on-site IT</span>
+                </div>
+                <span class="status ok">Healthy</span>
+              </div>
+
+              <div class="item clickable" onclick="showManager('m2')">
+                <div class="txt">
+                  <strong>Tiered Plan Approvals</strong>
+                  <span id="approvalLine">1 premium request pending</span>
+                </div>
+                <span class="status warn">Review</span>
+              </div>
+
+              <div class="item clickable" onclick="showManager('m7')">
+                <div class="txt">
+                  <strong>Conference Networks <span class="badge new">Create</span></strong>
+                  <span>Schedule dedicated Wi-Fi for events & meetings</span>
+                </div>
+                <span class="status">Manage</span>
+              </div>
+
+              <div class="item clickable" onclick="showManager('m3')">
+                <div class="txt">
+                  <strong>Managed Support Queue</strong>
+                  <span id="ticketLine">Handled by DataValet team</span>
+                </div>
+                <span class="status">View</span>
+              </div>
+
+              <div class="item clickable" onclick="showManager('m4')">
+                <div class="txt">
+                  <strong>IoT & Smart Building</strong>
+                  <span>Monitor building systems from one portal</span>
+                </div>
+                <span class="status ok">24 Online</span>
+              </div>
+
+              <div class="item clickable" onclick="showManager('m6')">
+                <div class="txt">
+                  <strong>PMS Integration <span class="badge new">Active</span></strong>
+                  <span>Auto sync move-in/move-out data</span>
+                </div>
+                <span class="status ok">Yardi Connected</span>
+              </div>
+            </div>
+
+            <div class="btnRow">
+              <button class="ghost" onclick="setMode('resident'); showResident(1)">Resident View</button>
+              <button class="primary" onclick="toast('Dashboard refreshed ✅')">Refresh</button>
+            </div>
+          </div>
+
+          <!-- Premium Approvals -->
+          <div id="m2" class="view" style="display:none">
+            <h2>Premium Plan Approvals</h2>
+            <p>Review and approve Premium plan requests. Billing is handled through your property management system.</p>
+
+            <div class="hintBox">
+              <b>Pending Request:</b> Unit <span id="reqUnit">—</span> • <span id="reqEmail">—</span><br/>
+              <b>Plan Change:</b> Basic → Premium (+$25/month)<br/>
+              <b>Billing:</b> Added to next month's rent invoice<br/>
+              <b>Activation:</b> Instant upon approval
+            </div>
+
+            <div class="list">
+              <div class="item">
+                <div class="txt">
+                  <strong>Unit <span id="reqUnit2">—</span></strong>
+                  <span>Resident verified • Email confirmed • Payment method: Rent</span>
+                </div>
+                <span class="status warn" id="reqStatus">Pending</span>
+              </div>
+            </div>
+
+            <div class="btnRow">
+              <button class="ghost" onclick="showManager('m1')">Back</button>
+              <button class="primary" onclick="approvePremium()">
+                <span class="spinner"></span><span>Approve Request</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Support Queue -->
+          <div id="m3" class="view" style="display:none">
+            <h2>Support Ticket Queue</h2>
+            <p>Managed by DataValet's 24/7/365 support team. View tickets and escalate if needed.</p>
+
+            <div class="hintBox">
+              <b>Support Model:</b> Fully managed by DataValet<br/>
+              <b>Average Response:</b> 15 minutes<br/>
+              <b>Escalation Path:</b> Tier 1 → Tier 2 → On-site technician
+            </div>
+
+            <div class="list" id="ticketList"></div>
+
+            <div class="btnRow">
+              <button class="ghost" onclick="showManager('m1')">Back</button>
+              <button class="primary" onclick="toast('Ticket assigned to technician ✅')">Assign to Tech</button>
+            </div>
+          </div>
+
+          <!-- IoT Management -->
+          <div id="m4" class="view" style="display:none">
+            <h2>IoT Device Management</h2>
+            <p>Monitor and manage building systems connected to Maestro: cameras, access control, sensors, and smart systems.</p>
+
+            <div class="list">
+              <div class="deviceItem">
+                <div class="deviceIcon">📹</div>
+                <div class="deviceInfo">
+                  <strong>Lobby Camera #1</strong>
+                  <span>Location: Main Entrance • Online • Recording</span>
+                </div>
+                <span class="status ok">Online</span>
+              </div>
+              <div class="deviceItem">
+                <div class="deviceIcon">🚪</div>
+                <div class="deviceInfo">
+                  <strong>Smart Lock System</strong>
+                  <span>Location: Building Entry • 8 doors connected</span>
+                </div>
+                <span class="status ok">Online</span>
+              </div>
+              <div class="deviceItem">
+                <div class="deviceIcon">🌡️</div>
+                <div class="deviceInfo">
+                  <strong>HVAC Controller</strong>
+                  <span>Location: Mechanical Room • Temp: 72°F</span>
+                </div>
+                <span class="status ok">Online</span>
+              </div>
+              <div class="deviceItem">
+                <div class="deviceIcon">🔥</div>
+                <div class="deviceInfo">
+                  <strong>Fire Alarm Panel</strong>
+                  <span>Location: Multiple • System normal</span>
+                </div>
+                <span class="status ok">Online</span>
+              </div>
+            </div>
+
+            <div class="hintBox">
+              <b>mDNS/Multicast Support:</b> Enabled for smart TVs, security cameras, printers<br/>
+              <b>Real-time Alerts:</b> Instant notification for offline devices
+            </div>
+
+            <div class="btnRow">
+              <button class="ghost" onclick="showManager('m1')">Back</button>
+              <button class="primary" onclick="toast('IoT devices refreshed ✅')">Refresh Status</button>
+            </div>
+          </div>
+
+          <!-- Location Analytics -->
+          <div id="m5" class="view" style="display:none">
+            <h2>Location Analytics</h2>
+            <p>Understand how residents use common spaces. Optimize amenities and enhance property value.</p>
+
+            <div class="grid2">
+              <div class="kpi">
+                <strong>42</strong>
+                <span>Peak Gym Users (Today)</span>
+              </div>
+              <div class="kpi">
+                <strong>18 min</strong>
+                <span>Avg. Lobby Dwell Time</span>
+              </div>
+              <div class="kpi">
+                <strong>12</strong>
+                <span>Current Pool Occupancy</span>
+              </div>
+              <div class="kpi">
+                <strong>6 PM</strong>
+                <span>Peak Common Area Time</span>
+              </div>
+            </div>
+
+            <div class="list">
+              <div class="item">
+                <div class="txt">
+                  <strong>Fitness Center</strong>
+                  <span>Peak: 6-8 AM, 5-7 PM • Avg. session: 45 min</span>
+                </div>
+                <span class="status ok">High Usage</span>
+              </div>
+              <div class="item">
+                <div class="txt">
+                  <strong>Rooftop Lounge</strong>
+                  <span>Peak: Weekends 7-10 PM • Avg. session: 2 hours</span>
+                </div>
+                <span class="status">Moderate</span>
+              </div>
+              <div class="item">
+                <div class="txt">
+                  <strong>Business Center</strong>
+                  <span>Peak: Weekdays 9 AM-5 PM • Low weekend usage</span>
+                </div>
+                <span class="status warn">Under-utilized</span>
+              </div>
+            </div>
+
+            <div class="hintBox">
+              <b>Insights:</b> Real-time occupancy, dwell time, traffic patterns<br/>
+              <b>Communications:</b> Send location-based messages to residents<br/>
+              <b>Example:</b> "Gym closing in 5 minutes" auto-sent to residents in gym
+            </div>
+
+            <div class="btnRow">
+              <button class="ghost" onclick="showManager('m1')">Back</button>
+              <button class="primary" onclick="toast('Analytics exported ✅')">Export Data</button>
+            </div>
+          </div>
+
+          <!-- PMS Integration -->
+          <div id="m6" class="view" style="display:none">
+            <h2>PMS Integration</h2>
+            <p>Sync resident move-in/move-out data from your property management system for instant Wi-Fi onboarding and automatic deactivation.</p>
+
+            <div class="grid2">
+              <div class="kpi">
+                <strong>Yardi Voyager</strong>
+                <span>Connected PMS</span>
+              </div>
+              <div class="kpi">
+                <strong>Real-time</strong>
+                <span>Sync Frequency</span>
+              </div>
+            </div>
+
+            <div class="list">
+              <div class="item">
+                <div class="txt">
+                  <strong>Auto Onboarding</strong>
+                  <span>Wi-Fi activates instantly on move-in date</span>
+                </div>
+                <span class="status ok">Enabled</span>
+              </div>
+              <div class="item">
+                <div class="txt">
+                  <strong>Auto Deactivation</strong>
+                  <span>Network access removed on move-out</span>
+                </div>
+                <span class="status ok">Enabled</span>
+              </div>
+              <div class="item">
+                <div class="txt">
+                  <strong>Billing Integration</strong>
+                  <span>Premium charges added to rent invoice</span>
+                </div>
+                <span class="status ok">Active</span>
+              </div>
+            </div>
+
+            <div class="hintBox">
+              <b>Supported PMS:</b> Yardi Voyager, RealPage, Entrata, MRI Software, and more<br/>
+              <b>Data Synced:</b> Move-in/out dates, unit numbers, resident contact info<br/>
+              <b>Benefit:</b> Zero manual provisioning - fully automated resident lifecycle
+            </div>
+
+            <div class="btnRow">
+              <button class="ghost" onclick="showManager('m1')">Back</button>
+              <button class="primary" onclick="toast('PMS sync successful ✅')">Sync Now</button>
+            </div>
+          </div>
+
+          <!-- Conference Networks (Manager) -->
+          <div id="m7" class="view" style="display:none">
+            <h2>Conference Networks</h2>
+            <p>Create temporary, high-capacity networks for events, meetings, or building amenities. Schedule and manage dedicated conference Wi-Fi.</p>
+
+            <div class="field">
+              <label for="confName">Conference Name</label>
+              <input id="confName" placeholder="e.g., Annual Residents Meeting" />
+            </div>
+
+            <div class="grid2" style="margin-top:10px;">
+              <div class="field">
+                <label for="confDate">Event Date</label>
+                <input id="confDate" type="date" />
+              </div>
+              <div class="field">
+                <label for="confDuration">Duration (hours)</label>
+                <input id="confDuration" type="number" placeholder="4" />
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="confLocation">Location</label>
+              <select id="confLocation">
+                <option>Rooftop Event Space</option>
+                <option>Community Room</option>
+                <option>Fitness Center</option>
+                <option>Lobby</option>
+              </select>
+            </div>
+
+            <div class="hintBox">
+              <b>Features:</b> Dedicated bandwidth, custom SSID, branded portal<br/>
+              <b>Use Cases:</b> Resident events, workshops, property tours, large gatherings<br/>
+              <b>Benefit:</b> Doesn't impact resident bandwidth during events
+            </div>
+
+            <div class="btnRow">
+              <button class="ghost" onclick="showManager('m1')">Back</button>
+              <button class="primary" onclick="toast('Conference network scheduled ✅'); showManager('m1')">Create Network</button>
+            </div>
+          </div>
+
+          <!-- Bandwidth Usage Analytics (Resident) -->
+          <div id="v12" class="view" style="display:none">
+            <h2>Bandwidth Usage</h2>
+            <p>Monitor your data consumption and track usage patterns across all your devices.</p>
+
+            <div class="grid2">
+              <div class="kpi">
+                <strong>124 GB</strong>
+                <span>This Month</span>
+              </div>
+              <div class="kpi">
+                <strong>4.1 GB</strong>
+                <span>Daily Average</span>
+              </div>
+              <div class="kpi">
+                <strong>98 GB</strong>
+                <span>Last Month</span>
+              </div>
+              <div class="kpi">
+                <strong>Unlimited</strong>
+                <span>Data Cap</span>
+              </div>
+            </div>
+
+            <div class="list">
+              <div class="item">
+                <div class="txt">
+                  <strong>Peak Usage Time</strong>
+                  <span>7 PM - 11 PM • Streaming & gaming</span>
+                </div>
+                <span class="status ok">Normal</span>
+              </div>
+              <div class="item">
+                <div class="txt">
+                  <strong>Top Device</strong>
+                  <span>Samsung Smart TV • 52 GB this month</span>
+                </div>
+                <span class="status">📺</span>
+              </div>
+              <div class="item">
+                <div class="txt">
+                  <strong>Network Performance</strong>
+                  <span>Avg speed: 48 Mbps • Uptime: 99.9%</span>
+                </div>
+                <span class="status ok">Excellent</span>
+              </div>
+            </div>
+
+            <div class="hintBox">
+              <b>Fair Use Policy:</b> Unlimited data with no throttling<br/>
+              <b>Speed Tier:</b> Up to 50 Mbps (Basic Plan)<br/>
+              <b>Upgrade:</b> Premium plan offers up to 200 Mbps
+            </div>
+
+            <div class="btnRow">
+              <button class="ghost" onclick="goR(12,8)">Back</button>
+              <button class="primary" onclick="toast('Usage report exported ✅')">Export Report</button>
+            </div>
+          </div>
+
+          <!-- Plan Upgrade (Resident) -->
+          <div id="v13" class="view" style="display:none">
+            <h2>Upgrade Your Plan</h2>
+            <p>Get faster speeds and enhanced features with Premium. Perfect for gaming, 4K streaming, and working from home.</p>
+
+            <div class="plan" style="opacity:0.6;cursor:default;">
+              <div class="planTop">
+                <strong>Basic Plan (Current)</strong>
+                <span class="tag basic">Included</span>
+              </div>
+              <div class="planMeta">Your current plan</div>
+              <ul class="planFeatures">
+                <li>Up to 50 Mbps download</li>
+                <li>Unlimited data</li>
+                <li>10 connected devices</li>
+              </ul>
+            </div>
+
+            <div class="plan selected" style="margin-top:10px;">
+              <div class="planTop">
+                <strong>Premium Plan</strong>
+                <span class="tag premium">+$25/month</span>
+              </div>
+              <div class="planMeta">4x faster speeds • Enhanced capacity</div>
+              <ul class="planFeatures">
+                <li>Up to 200 Mbps download</li>
+                <li>Unlimited data</li>
+                <li>Unlimited devices</li>
+                <li>Priority support</li>
+                <li>Conference network access</li>
+              </ul>
+            </div>
+
+            <div class="hintBox">
+              <b>Upgrade Process:</b> Request sent to property manager for approval<br/>
+              <b>Billing:</b> Added to next month's rent via PMS integration<br/>
+              <b>Activation:</b> Instant upon approval (typically 24 hours)
+            </div>
+
+            <div class="btnRow">
+              <button class="ghost" onclick="goR(13,8)">Back</button>
+              <button class="primary" onclick="toast('Premium upgrade requested ✅'); premiumRequest={pending:true,unit:selectedUnit,email:selectedEmail,approved:false}; goR(13,8)">Request Upgrade</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="toast" id="toast">Saved</div>
+    </div>
+  </div>
+
+  <script>
+    // Demo registry: unit -> email
+    const registry = { "304":"alex@demo.com", "1208":"sara@demo.com" };
+
+    // State
+    let mode = "resident";
+    let chosenPlan = "Basic";
+    let selectedUnit = "";
+    let selectedEmail = "";
+    let otp = "";
+    let premiumRequest = { pending: false, unit: "", email: "", approved: false };
+    let tickets = [];
+
+    const total = 8;
+    let step = 1;
+    let resendSeconds = 30;
+    let resendTimer = null;
+
+    // Refs
+    const t = document.getElementById("toast");
+    const bar = document.getElementById("bar");
+    const stepText = document.getElementById("stepText");
+    const hintText = document.getElementById("hintText");
+    const progressWrap = document.getElementById("progressWrap");
+    const modePill = document.getElementById("modePill");
+    const subTitle = document.getElementById("subTitle");
+
+    function toast(msg){
+      t.textContent = msg;
+      t.classList.add("show");
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(()=> t.classList.remove("show"), 1600);
+    }
+
+    function setError(id, msg){
+      const el = document.getElementById(id);
+      if(!el) return;
+      if(!msg){ el.classList.remove("show"); el.textContent=""; return; }
+      el.textContent = msg;
+      el.classList.add("show");
+    }
+
+    function setLoadingOn(btnEl, isLoading){
+      if(!btnEl) return;
+      btnEl.classList.toggle("loading", isLoading);
+      btnEl.disabled = isLoading;
+    }
+
+    function setMode(next){
+      mode = next;
+      modePill.textContent = (mode === "resident") ? "Resident" : "Manager";
+      subTitle.textContent = (mode === "resident") ? "Turnkey MDU Wi-Fi" : "Property Dashboard";
+      progressWrap.style.display = (mode === "resident") ? "flex" : "none";
+    }
+
+    function startPrimary(){
+      if(mode === "resident") showResident(2);
+      else showManagerLogin();
+    }
+
+    function showManagerLogin(){
+      hideAll();
+      setMode("manager");
+      document.getElementById("vManagerLogin").style.display = "flex";
+      setError("errManager", "");
+    }
+
+    function loginManager(){
+      const username = (document.getElementById("managerUsername").value || "").trim().toLowerCase();
+      const password = (document.getElementById("managerPassword").value || "").trim();
+      
+      setError("errManager", "");
+      
+      if(!username || !password){
+        setError("errManager", "Please enter both username and password.");
+        return;
+      }
+      
+      if(username !== "manager@riverside.com" || password !== "demo2024"){
+        setError("errManager", "Invalid credentials. Please try again.");
+        return;
+      }
+
+      const btn = document.querySelector("#vManagerLogin .primary");
+      setLoadingOn(btn, true);
+      
+      setTimeout(()=>{
+        setLoadingOn(btn, false);
+        toast("Manager login successful ✅");
+        showManager("m1");
+      }, 600);
+    }
+
+    function updateResidentUI(){
+      stepText.textContent = `Step ${step} of ${total}`;
+      bar.style.width = Math.round((step-1)/(total-1)*100) + "%";
+      const hints = {
+        1:"Choose mode",
+        2:"Verify unit via PMS sync",
+        3:"Secure email verification",
+        4:"2FA authentication",
+        5:"Select service tier",
+        6:"Approval workflow",
+        7:"Network provisioning",
+        8:"Self-service management"
+      };
+      hintText.textContent = hints[step] || "";
+    }
+
+    function hideAll(){
+      for(let i=1;i<=13;i++){
+        const el = document.getElementById("v"+i);
+        if(el) el.style.display = "none";
+      }
+      const vManagerLogin = document.getElementById("vManagerLogin");
+      if(vManagerLogin) vManagerLogin.style.display = "none";
+      
+      ["m1","m2","m3","m4","m5","m6","m7"].forEach(id=>{
+        const el = document.getElementById(id);
+        if(el) el.style.display = "none";
+      });
+    }
+
+    function showResident(n){
+      hideAll();
+      document.getElementById("v"+n).style.display = "flex";
+      step = Math.min(total, n);
+      updateResidentUI();
+      setMode("resident");
+    }
+
+    function goR(from,to){
+      setError("err2","");
+      setError("err3","");
+      setError("err4","");
+      setError("err9","");
+      setError("errManager","");
+
+      if(to === 3){
+        document.getElementById("unitLine").innerHTML = `<b>Unit:</b> ${selectedUnit || "—"} • <b>PMS Status:</b> Verified`;
+      }
+      if(to === 7){
+        document.getElementById("ssidLabel").textContent = "Maestro-RiversideTowers";
+        document.getElementById("unitOut2").textContent = selectedUnit || "—";
+        const planLabel = chosenPlan === "Basic" ? "Basic (Included)" : "Premium (+$25/month)";
+        document.getElementById("planTiny").textContent = planLabel;
+      }
+      if(to === 8){
+        document.getElementById("unitFinal").textContent = selectedUnit || "—";
+        const planLabel = chosenPlan === "Basic" ? "Basic" : (premiumRequest.approved ? "Premium (Approved)" : "Premium (Pending)");
+        document.getElementById("planOut").textContent = planLabel;
+      }
+      showResident(to);
+    }
+
+    function validateUnit(){
+      const unit = (document.getElementById("unit").value || "").trim();
+      if(!unit){ setError("err2","Please enter your unit number."); return; }
+      if(!registry[unit]){ setError("err2","Unit not found in PMS. Demo units: 304, 1208"); return; }
+      selectedUnit = unit;
+      toast(`Unit ${unit} verified via PMS ✅`);
+      goR(2,3);
+    }
+
+    function maskEmail(email){
+      const [u, d] = email.split("@");
+      if(!d) return email;
+      const maskedUser = (u.length <= 2) ? (u[0] + "*") : (u[0] + "*".repeat(Math.min(6, u.length-2)) + u[u.length-1]);
+      return maskedUser + "@" + d;
+    }
+
+    function genOtp(){
+      otp = String(Math.floor(100000 + Math.random() * 900000));
+      document.getElementById("otpHint").textContent = otp;
+    }
+
+    function startResendCountdown(){
+      resendSeconds = 30;
+      document.getElementById("resendBtn").disabled = true;
+      document.getElementById("countdownPill").textContent = `Resend in ${resendSeconds}s`;
+      clearInterval(resendTimer);
+      resendTimer = setInterval(()=>{
+        resendSeconds--;
+        if(resendSeconds <= 0){
+          clearInterval(resendTimer);
+          document.getElementById("countdownPill").textContent = "Code expired";
+          document.getElementById("resendBtn").disabled = false;
+          return;
+        }
+        document.getElementById("countdownPill").textContent = `Resend in ${resendSeconds}s`;
+      }, 1000);
+    }
+
+    function sendOtp(){
+      const email = (document.getElementById("email").value || "").trim().toLowerCase();
+      if(!email){ setError("err3","Please enter your registered email."); return; }
+      const registered = registry[selectedUnit];
+      if(email !== registered){
+        setError("err3","Email does not match PMS records for this unit.");
+        return;
+      }
+      selectedEmail = email;
+      genOtp();
+      document.getElementById("maskedEmail").textContent = maskEmail(selectedEmail);
+      startResendCountdown();
+      toast("Verification code sent ✅");
+      setTimeout(()=> goR(3,4), 240);
+    }
+
+    function resendOtp(){
+      genOtp();
+      startResendCountdown();
+      toast("New code sent ✅");
+    }
+
+    function verifyOtp(){
+      const entered = (document.getElementById("otp").value || "").trim();
+      if(!entered){ setError("err4","Please enter the 6-digit code."); return; }
+      if(entered !== otp){ setError("err4","Incorrect code. Please try again."); return; }
+
+      const btn = document.getElementById("verifyBtn");
+      setLoadingOn(btn, true);
+      setTimeout(()=>{
+        setLoadingOn(btn, false);
+        toast("Account verified ✅");
+        goR(4,5);
+      }, 700);
+    }
+
+    function choosePlan(p){
+      chosenPlan = p;
+      document.getElementById("planBasic").classList.toggle("selected", p === "Basic");
+      document.getElementById("planPremium").classList.toggle("selected", p === "Premium");
+      const label = p === "Basic" ? "Basic Plan" : "Premium Plan";
+      toast(`Selected: ${label}`);
+    }
+
+    function continueFromPlan(){
+      if(chosenPlan === "Premium"){
+        premiumRequest = { pending: true, unit: selectedUnit, email: selectedEmail, approved: false };
+        toast("Premium request submitted for approval");
+        goR(5,6);
+      } else {
+        goR(5,7);
+      }
+    }
+
+    function createNetwork(){
+      const btn = document.getElementById("createBtn");
+      setLoadingOn(btn, true);
+      toast("Provisioning micro-segmented network…");
+      setTimeout(()=>{
+        setLoadingOn(btn, false);
+        toast("Network activated! Welcome to Building-Wifi ✅");
+        goR(7,8);
+      }, 1100);
+    }
+
+    function submitTicket(){
+      const issue = (document.getElementById("issue").value || "").trim();
+      const details = (document.getElementById("details").value || "").trim();
+      if(!issue){ setError("err9","Please describe the issue."); return; }
+
+      tickets.unshift({
+        unit: selectedUnit || "—",
+        issue,
+        details,
+        status: "Open"
+      });
+
+      document.getElementById("issue").value = "";
+      document.getElementById("details").value = "";
+
+      toast("Ticket submitted to DataValet support team ✅");
+      goR(9,8);
+    }
+
+    // Manager
+    function showManager(id){
+      hideAll();
+      setMode("manager");
+      document.getElementById(id).style.display = "flex";
+      refreshManagerLines();
+    }
+
+    function refreshManagerLines(){
+      const pendingCount = premiumRequest.pending && !premiumRequest.approved ? 1 : 0;
+      document.getElementById("approvalLine").textContent = pendingCount ? "1 pending Premium request" : "No pending requests";
+
+      const openTickets = tickets.filter(t => t.status === "Open").length;
+      document.getElementById("ticketLine").textContent = openTickets ? `${openTickets} ticket${openTickets>1?"s":""} - managed by DataValet` : "All tickets handled by DataValet team";
+
+      document.getElementById("reqUnit").textContent = premiumRequest.unit || "—";
+      document.getElementById("reqUnit2").textContent = premiumRequest.unit || "—";
+      document.getElementById("reqEmail").textContent = premiumRequest.email || "—";
+      const statusText = premiumRequest.pending && !premiumRequest.approved ? "Pending" : (premiumRequest.approved ? "Approved" : "—");
+      document.getElementById("reqStatus").textContent = statusText;
+      document.getElementById("reqStatus").className = "status " + (premiumRequest.pending && !premiumRequest.approved ? "warn" : (premiumRequest.approved ? "ok" : ""));
+      renderTickets();
+    }
+
+    function renderTickets(){
+      const ticketList = document.getElementById("ticketList");
+      ticketList.innerHTML = "";
+      const list = tickets.length ? tickets : [{
+        unit:"—", issue:"No open tickets", details:"All support requests resolved", status:"—"
+      }];
+
+      list.slice(0,5).forEach(tk=>{
+        const statusClass = tk.status === "Open" ? "" : "ok";
+        const div = document.createElement("div");
+        div.className = "item";
+        div.innerHTML = `
+          <div class="txt">
+            <strong>Unit ${escapeHtml(tk.unit)} • ${escapeHtml(tk.issue)}</strong>
+            <span>${tk.details ? escapeHtml(tk.details) : "No additional details"}</span>
+          </div>
+          <span class="status ${statusClass}">${tk.status}</span>
+        `;
+        ticketList.appendChild(div);
+      });
+    }
+
+    function approvePremium(){
+      const btn = document.querySelector("#m2 .primary");
+      setLoadingOn(btn, true);
+
+      setTimeout(()=>{
+        setLoadingOn(btn, false);
+
+        if(!(premiumRequest.pending && !premiumRequest.approved)){
+          toast("No pending requests");
+          refreshManagerLines();
+          return;
+        }
+
+        premiumRequest.approved = true;
+        premiumRequest.pending = false;
+        toast("Premium plan approved! Resident notified ✅");
+        refreshManagerLines();
+        showManager("m1");
+      }, 800);
+    }
+
+    function resetAll(){
+      chosenPlan = "Basic";
+      selectedUnit = "";
+      selectedEmail = "";
+      otp = "";
+      premiumRequest = { pending:false, unit:"", email:"", approved:false };
+      tickets = [];
+      clearInterval(resendTimer);
+
+      document.getElementById("planBasic").classList.add("selected");
+      document.getElementById("planPremium").classList.remove("selected");
+
+      document.getElementById("unit").value = "";
+      document.getElementById("email").value = "";
+      document.getElementById("otp").value = "";
+      document.getElementById("issue").value = "";
+      document.getElementById("details").value = "";
+      document.getElementById("managerUsername").value = "";
+      document.getElementById("managerPassword").value = "";
+
+      toast("Demo reset");
+      showResident(1);
+    }
+
+    function escapeHtml(s){
+      return String(s).replace(/[&<>"']/g, (c)=>({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+      }[c]));
+    }
+
+    // Enter key shortcuts
+    document.addEventListener("keydown", (e)=>{
+      if(e.key !== "Enter") return;
+      if(mode !== "resident") return;
+      if(step === 2) validateUnit();
+      if(step === 3) sendOtp();
+      if(step === 4) verifyOtp();
+    });
+
+    // Init
+    setMode("resident");
+    showResident(1);
+  </script>
+</body>
+</html>
